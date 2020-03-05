@@ -36,6 +36,7 @@
 #include <scrimmage/plugins/autonomy/MotorSchemas/BehaviorBase.h>
 #include <scrimmage/common/Waypoint.h>
 #include <scrimmage/common/PID.h>
+#include <scrimmage/common/CSV.h>
 
 #include <string>
 #include <map>
@@ -53,6 +54,10 @@ class MoveToGoalMS : public scrimmage::autonomy::motor_schemas::BehaviorBase {
  protected:
     Waypoint wp_;
     Eigen::Vector3d wp_local_;
+    scrimmage::CSV csv;
+    Eigen::MatrixXd multiplier;
+    Eigen::Vector3d accel;
+
 
     PID speed_pid_;
 };

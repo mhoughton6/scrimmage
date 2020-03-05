@@ -7,6 +7,7 @@ SET (LIB_MINOR 0)
 SET (LIB_RELEASE 1)
 
 file(GLOB SRCS *.cpp)
+find_package(ct_optcon REQUIRED) # MDH added to make LQR work?
 
 ADD_LIBRARY(${LIBRARY_NAME} SHARED
   ${SRCS}
@@ -16,6 +17,7 @@ TARGET_LINK_LIBRARIES(${LIBRARY_NAME}
   scrimmage-core
   WaypointGenerator_plugin
   MotorSchemas_plugin
+  ct_optcon
   )
 
 SET (_soversion ${LIB_MAJOR}.${LIB_MINOR}.${LIB_RELEASE})
