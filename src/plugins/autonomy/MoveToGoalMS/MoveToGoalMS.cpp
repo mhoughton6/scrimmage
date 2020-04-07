@@ -45,8 +45,8 @@
 //MDH additions for LQR controller
 #include <ct/optcon/optcon.h>  // also includes ct_core
 #include <ct/core/core.h>
-#include </home/matthewhoughton/LQR_Work/src/control-toolbox/ct_optcon/examples/exampleDir.h>
-#include </home/matthewhoughton/LQR_Work/src/my_ct_project/main/droneSystem.h>
+#include </home/uav/LQR_Work/src/control-toolbox/ct_optcon/examples/exampleDir.h>
+#include </home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/my_ct_project/main/droneSystem.h>
 
 #include <iostream>
 #include <limits>
@@ -146,7 +146,7 @@ void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
     auto B = adLinearizer.getDerivativeControl(x, u, t);
     // load the weighting matrices
     ct::optcon::TermQuadratic<state_dim, control_dim> quadraticCost;
-    quadraticCost.loadConfigFile("/home/matthewhoughton/LQR_Work/src/my_ct_project/main/lqrCost.info", "termLQR", true);
+    quadraticCost.loadConfigFile("/home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/my_ct_project/main/lqrCost.info", "termLQR", true);
     auto Q = quadraticCost.stateSecondDerivative(x, u, t);    // x, u and t can be arbitrary here
     auto R = quadraticCost.controlSecondDerivative(x, u, t);  // x, u and t can be arbitrary here
     // design the LQR controller
