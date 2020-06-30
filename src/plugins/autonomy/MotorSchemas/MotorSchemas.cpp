@@ -75,7 +75,7 @@ namespace autonomy {
 void MotorSchemas::init(std::map<std::string, std::string> &params) {
     show_shapes_ = sc::get("show_shapes", params, false);
     pub_vel_vec_ = sc::get("pub_vel_vec", params, false);
-    max_speed_ = sc::get<double>("max_speed", params, 55);
+    max_speed_ = sc::get<double>("max_speed", params, 20);
 
     add_lower_bound_to_vz_ = sc::get("add_lower_bound_to_vz", params, false);
     vz_lower_bound_ = sc::get<double>("vz_lower_bound", params, -1.0);

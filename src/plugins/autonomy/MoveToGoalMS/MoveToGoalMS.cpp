@@ -72,6 +72,7 @@ MoveToGoalMS::MoveToGoalMS() {
 }
 
 bool first_step = true;
+bool PID = false;
 
 void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
     if (sc::get("use_initial_heading", params, false)) {
@@ -91,11 +92,13 @@ void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
 
     // OLD Code for PID Controller
     // Initialize PID controller class
-    speed_pid_.set_parameters(sc::get("p_gain", params, 0.5),
-                              sc::get("i_gain", params, 0.0),
-                              sc::get("d_gain", params, 0.0));
-    speed_pid_.set_integral_band(sc::get("integral_band", params, 0.0));
-    speed_pid_.set_setpoint(0.0);
+    if (PID == true) {
+        speed_pid_.set_parameters(sc::get("p_gain", params, 0.5),
+            sc::get("i_gain", params, 0.0),
+            sc::get("d_gain", params, 0.0));
+        speed_pid_.set_integral_band(sc::get("integral_band", params, 0.0));
+        speed_pid_.set_setpoint(0.0);
+    }
 
     // Convert XYZ goal to lat/lon/alt
     double lat, lon, alt;
@@ -111,95 +114,12 @@ void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
     auto wp_cb = [&] (scrimmage::MessagePtr<Waypoint> msg) {
         wp_ = msg->data;
         parent_->projection()->Forward(wp_.latitude(),
-                                       wp_.longitude(),
-                                       wp_.altitude(), wp_local_(0),
-                                       wp_local_(1), wp_local_(2));
+            wp_.longitude(),
+            wp_.altitude(), wp_local_(0),
+            wp_local_(1), wp_local_(2));
     };
     subscribe<Waypoint>("LocalNetwork", "Waypoint", wp_cb);
-    
 
-    /*
-    // Initialize LQR Controller
-    // get the state and control input dimension of the oscillator
-    // Drone state is a 6 x 6 state matrix set up in droneSystem.h
-    //It is set as xyz pos and velocity state set up as x,vx,y,vy,z,vz
-    const size_t state_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::STATE_DIM;
-
-    // Control is 6 x 3 matrix also set up in droneState.h
-    //In this case, the controls are accelerations
-    const size_t control_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::CONTROL_DIM;
-
-    // create an auto-differentiable instance of the drone dynamics
-    auto drone_sys_ptr = new ct::core::tpl::droneSystem<ct::core::ADCGScalar>(5);
-    std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim, ct::core::ADCGScalar>> droneDynamics(
-        drone_sys_ptr);
-
-    // create an Auto-Differentiation Linearizer with code generation on the quadrotor model
-    ct::core::ADCodegenLinearizer<state_dim, control_dim> adLinearizer(droneDynamics);
-
-    // compile the linearized model just-in-time
-    adLinearizer.compileJIT();
-
-    // define the linearization point around steady state
-    // x_g here is the goal state for the LQR. The xyz waypoint positions are input here to set up the LQR
-    ct::core::StateVector<state_dim> x_g;
-    x_g(0) = wp_local_(0);
-    x_g(1) = 0;
-    x_g(2) = wp_local_(1);
-    x_g(3) = 0;
-    x_g(4) = wp_local_(2);
-    x_g(5) = 0;
-    std::cout<< "Is there a goal? x_g(0) =  " <<x_g(0) <<std::endl;
-
-    //This vector takes in state position and veloctiy and combines it into one vector to be used in LQR
-    ct::core::StateVector<state_dim> x;
-    x(0) = state_->pos()[0];
-    x(2) = state_->pos()[1];
-    x(4) = state_->pos()[2];
-    x(1) = state_->vel()[0];
-    x(3) = state_->vel()[1];
-    x(5) = state_->vel()[2];
-    std::cout<< "X is " <<x <<std::endl;
-
-    //The control here is left blank as it is only being used to initialize and calculate the LQR values
-    ct::core::ControlVector<control_dim> u;
-    u.setZero();
-    double t = 0.0;
-    // compute the linearization around the nominal state using the Auto-Diff Linearizer
-    auto A = adLinearizer.getDerivativeState(x, u, t);
-    auto B = adLinearizer.getDerivativeControl(x, u, t);
-    // load the weighting matrices
-    ct::optcon::TermQuadratic<state_dim, control_dim> quadraticCost;
-    std::cout<< "Does this reach? #1 "<<std::endl;
-    quadraticCost.loadConfigFile("/home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/my_ct_project/main/lqrCost.info", "termLQR", true);
-    auto Q = quadraticCost.stateSecondDerivative(x, u, t);    // x, u and t can be arbitrary here
-    auto R = quadraticCost.controlSecondDerivative(x, u, t);  // x, u and t can be arbitrary here
-    // design the LQR controller
-    
-    
-    ct::optcon::LQR<state_dim, control_dim> lqrSolver;
-    ct::core::FeedbackMatrix<state_dim, control_dim> K;
-    std::cout<< "K is" << K <<std::endl;
-   // std::cout << "A: " << std::endl << A << std::endl << std::endl;
-   // std::cout << "B: " << std::endl << B << std::endl << std::endl;
-   // std::cout << "Q: " << std::endl << Q << std::endl << std::endl;
-    //std::cout << "R: " << std::endl << R << std::endl << std::endl;
-    //lqrSolver.compute(Q, R, A, B, K);
-    
-    std::cout << "LQR gain matrix:" << std::endl << K << std::endl;
-    multiplier = (A - B*K);
-    accel(0) = 0;
-    accel(1) = 0;
-    accel(2) = 0;
-    //std::cout <<"Multiplier" << std::endl << multiplier <<std::endl;
-    */
-
-
-
-
-
-
-    
     // Write the CSV file to the root log directory
     std::string log_filename = parent_->mp()->log_dir() + "/"
          + "state_log.csv";
@@ -211,91 +131,93 @@ void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
           << endl;
     }
     csv.set_column_headers("t, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, accel_x, accel_y, accel_z, speed");
-    
+
 }
 
 bool MoveToGoalMS::step_autonomy(double t, double dt) {
-    //double measurement = -(wp_local_ - state_->pos()).norm();
-    //double speed_factor = speed_pid_.step(dt, measurement);
-    //desired_vector_ = (wp_local_ - state_->pos()).normalized() * speed_factor;
+  if (PID == true) {
+    double measurement = -(wp_local_ - state_->pos()).norm();
+    double speed_factor = speed_pid_.step(dt, measurement);
+    desired_vector_ = (wp_local_ - state_->pos()).normalized() * speed_factor;
     //Eigen::Vector3d desired_accel_ = (desired_vector_ - state_->vel()) * dt;
+  } else {
     if (first_step == true) {
-        
-        // Initialize LQR Controller
-        // get the state and control input dimension of the oscillator
-        // Drone state is a 6 x 6 state matrix set up in droneSystem.h
-        //It is set as xyz pos and velocity state set up as x,vx,y,vy,z,vz
-        const size_t state_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::STATE_DIM;
 
-        // Control is 6 x 3 matrix also set up in droneState.h
-        //In this case, the controls are accelerations
-        const size_t control_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::CONTROL_DIM;
+      // Initialize LQR Controller
+      // get the state and control input dimension of the oscillator
+      // Drone state is a 6 x 6 state matrix set up in droneSystem.h
+      //It is set as xyz pos and velocity state set up as x,vx,y,vy,z,vz
+      const size_t state_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::STATE_DIM;
 
-        // create an auto-differentiable instance of the drone dynamics
-        auto drone_sys_ptr = new ct::core::tpl::droneSystem<ct::core::ADCGScalar>(5);
-        std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim, ct::core::ADCGScalar>> droneDynamics(
-            drone_sys_ptr);
+      // Control is 6 x 3 matrix also set up in droneState.h
+      //In this case, the controls are accelerations
+      const size_t control_dim = ct::core::tpl::droneSystem<ct::core::ADCGScalar>::CONTROL_DIM;
 
-        // create an Auto-Differentiation Linearizer with code generation on the quadrotor model
-        ct::core::ADCodegenLinearizer<state_dim, control_dim> adLinearizer(droneDynamics);
+      // create an auto-differentiable instance of the drone dynamics
+      auto drone_sys_ptr = new ct::core::tpl::droneSystem<ct::core::ADCGScalar>(5);
+      std::shared_ptr<ct::core::ControlledSystem<state_dim, control_dim, ct::core::ADCGScalar>> droneDynamics(
+          drone_sys_ptr);
 
-        // compile the linearized model just-in-time
-        adLinearizer.compileJIT();
+      // create an Auto-Differentiation Linearizer with code generation on the quadrotor model
+      ct::core::ADCodegenLinearizer<state_dim, control_dim> adLinearizer(droneDynamics);
 
-        // define the linearization point around steady state
-        // x_g here is the goal state for the LQR. The xyz waypoint positions are input here to set up the LQR
-        ct::core::StateVector<state_dim> x_g;
-        x_g(0) = wp_local_(0);
-        x_g(1) = 0;
-        x_g(2) = wp_local_(1);
-        x_g(3) = 0;
-        x_g(4) = wp_local_(2);
-        x_g(5) = 0;
-        //std::cout<< " x_g(0) =  " <<x_g(0) <<std::endl;
+      // compile the linearized model just-in-time
+      adLinearizer.compileJIT();
 
-        //This vector takes in state position and veloctiy and combines it into one vector to be used in LQR
-        ct::core::StateVector<state_dim> x;
-        x(0) = state_->pos()[0];
-        x(2) = state_->pos()[1];
-        x(4) = state_->pos()[2];
-        x(1) = state_->vel()[0];
-        x(3) = state_->vel()[1];
-        x(5) = state_->vel()[2];
-        //std::cout<< "X is " <<x <<std::endl;
+      // define the linearization point around steady state
+      // x_g here is the goal state for the LQR. The xyz waypoint positions are input here to set up the LQR
+      ct::core::StateVector<state_dim> x_g;
+      x_g(0) = wp_local_(0);
+      x_g(1) = 0;
+      x_g(2) = wp_local_(1);
+      x_g(3) = 0;
+      x_g(4) = wp_local_(2);
+      x_g(5) = 0;
+      //std::cout<< " x_g(0) =  " <<x_g(0) <<std::endl;
 
-        //The control here is left blank as it is only being used to initialize and calculate the LQR values
-        ct::core::ControlVector<control_dim> u;
-        u.setZero();
-        double t = 0.0;
-        // compute the linearization around the nominal state using the Auto-Diff Linearizer
-        auto A = adLinearizer.getDerivativeState(x, u, t);
-        auto B = adLinearizer.getDerivativeControl(x, u, t);
-        // load the weighting matrices
-        ct::optcon::TermQuadratic<state_dim, control_dim> quadraticCost;
-        //std::cout<< "Does this reach? #1 "<<std::endl;
-        quadraticCost.loadConfigFile("/home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/my_ct_project/main/lqrCost.info", "termLQR", true);
-        auto Q = quadraticCost.stateSecondDerivative(x, u, t);    // x, u and t can be arbitrary here
-        auto R = quadraticCost.controlSecondDerivative(x, u, t);  // x, u and t can be arbitrary here
-        // design the LQR controller
-        
-        
-        ct::optcon::LQR<state_dim, control_dim> lqrSolver;
-        ct::core::FeedbackMatrix<state_dim, control_dim> K;
-        //std::cout<< "K is" << K <<std::endl;
-        // std::cout << "A: " << std::endl << A << std::endl << std::endl;
-        // std::cout << "B: " << std::endl << B << std::endl << std::endl;
-        // std::cout << "Q: " << std::endl << Q << std::endl << std::endl;
-        //std::cout << "R: " << std::endl << R << std::endl << std::endl;
-        lqrSolver.compute(Q, R, A, B, K);
-        
-        std::cout << "LQR gain matrix:" << std::endl << K << std::endl;
-        multiplier = (A - B*K);
-        accel(0) = 0;
-        accel(1) = 0;
-        accel(2) = 0;
-        //std::cout <<"Multiplier" << std::endl << multiplier <<std::endl; 
+      //This vector takes in state position and veloctiy and combines it into one vector to be used in LQR
+      ct::core::StateVector<state_dim> x;
+      x(0) = state_->pos()[0];
+      x(2) = state_->pos()[1];
+      x(4) = state_->pos()[2];
+      x(1) = state_->vel()[0];
+      x(3) = state_->vel()[1];
+      x(5) = state_->vel()[2];
+      //std::cout<< "X is " <<x <<std::endl;
 
-        
+      //The control here is left blank as it is only being used to initialize and calculate the LQR values
+      ct::core::ControlVector<control_dim> u;
+      u.setZero();
+      double t = 0.0;
+      // compute the linearization around the nominal state using the Auto-Diff Linearizer
+      auto A = adLinearizer.getDerivativeState(x, u, t);
+      auto B = adLinearizer.getDerivativeControl(x, u, t);
+      // load the weighting matrices
+      ct::optcon::TermQuadratic<state_dim, control_dim> quadraticCost;
+      //std::cout<< "Does this reach? #1 "<<std::endl;
+      quadraticCost.loadConfigFile("/home/uav/trafficstop-integration/submodules/gtri-uav/submodules/scrimmage/src/plugins/autonomy/MoveToGoalMS/lqrCost.info", "termLQR", true);
+      auto Q = quadraticCost.stateSecondDerivative(x, u, t);    // x, u and t can be arbitrary here
+      auto R = quadraticCost.controlSecondDerivative(x, u, t);  // x, u and t can be arbitrary here
+      // design the LQR controller
+
+
+      ct::optcon::LQR<state_dim, control_dim> lqrSolver;
+      ct::core::FeedbackMatrix<state_dim, control_dim> K;
+      //std::cout<< "K is" << K <<std::endl;
+      // std::cout << "A: " << std::endl << A << std::endl << std::endl;
+      // std::cout << "B: " << std::endl << B << std::endl << std::endl;
+      // std::cout << "Q: " << std::endl << Q << std::endl << std::endl;
+      //std::cout << "R: " << std::endl << R << std::endl << std::endl;
+      lqrSolver.compute(Q, R, A, B, K);
+
+      //std::cout << "LQR gain matrix:" << std::endl << K << std::endl;
+      multiplier = (A - B*K);
+      accel(0) = 0;
+      accel(1) = 0;
+      accel(2) = 0;
+      //std::cout <<"Multiplier" << std::endl << multiplier <<std::endl;
+
+
     }
 
     first_step = false;
@@ -373,10 +295,10 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
         {"accel_x", accel(0)},
         {"accel_y", accel(1)},
         {"accel_z", accel(2)},
-        {"speed", speed_val}}); 
+        {"speed", speed_val}});
 
-        
 
+    }
     return true;
 }
 
