@@ -45,18 +45,23 @@
 //MDH additions for LQR controller
 #include <ct/optcon/optcon.h>  // also includes ct_core
 #include <ct/core/core.h>
-#include </home/uav/LQR_Work/src/control-toolbox/ct_optcon/examples/exampleDir.h>
-#include </home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/my_ct_project/main/droneSystem.h>
-
+//#include <ct_optcon/examples/exampleDir.h>
+//#include </home/uav/trafficstop-integration/submodules/gtri-uav/submodules/LQR_Work/src/control-toolbox/ct_optcon/examples/exampleDir.h>
+#include "droneSystem.h"
 #include <iostream>
 #include <limits>
 #include <cmath>
 #include <list>
+#include <boost/filesystem.hpp>
 
 #include <GeographicLib/LocalCartesian.hpp>
 
+
 using std::cout;
 using std::endl;
+
+
+
 
 namespace sc = scrimmage;
 
@@ -73,8 +78,19 @@ MoveToGoalMS::MoveToGoalMS() {
 
 bool first_step = true;
 bool PID = false;
+//std::string path = __FILE__;
+//std::string lqr_cost_path = path.substr(0,path.find("MoveToGoalMS.cpp"));
+
+
+
+
+
 
 void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
+    
+    //cout << "This is the original path" << path << std::endl;
+    //cout << "This is the lqr path" << lqr_cost_path << std::endl;
+    //cout << "Test of filesystem" << boost::filesystem::absolute(lqr_cost_path) << std::endl;
     if (sc::get("use_initial_heading", params, false)) {
         Eigen::Vector3d rel_pos = Eigen::Vector3d::UnitX()*1e6;
         Eigen::Vector3d unit_vector = rel_pos.normalized();
@@ -239,7 +255,7 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
     //std::cout << "goal Vec: " << std::endl << goal <<std::endl;
     Eigen::VectorXd measurement;
     measurement = full_state - goal;
-   // std::cout << "meas Vec: " << std::endl << measurementl <<std::endl;
+    //std::cout << "meas Vec: " << std::endl << measurementl <<std::endl;
     Eigen::VectorXd x_dot;
     x_dot = multiplier * measurement;
     //std::cout << "x_dot Vec: " << std::endl << x_dot <<std::endl;
