@@ -87,7 +87,7 @@ bool PID = false;
 
 
 void MoveToGoalMS::init(std::map<std::string, std::string> &params) {
-    
+
     //cout << "This is the original path" << path << std::endl;
     //cout << "This is the lqr path" << lqr_cost_path << std::endl;
     //cout << "Test of filesystem" << boost::filesystem::absolute(lqr_cost_path) << std::endl;
@@ -255,7 +255,9 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
     //std::cout << "goal Vec: " << std::endl << goal <<std::endl;
     Eigen::VectorXd measurement;
     measurement = full_state - goal;
-    //std::cout << "meas Vec: " << std::endl << measurementl <<std::endl;
+    double distance_from_g = sqrt((measurement(0) * measurement(0)) + (measurement(2) * measurement(2)));
+    //std::cout << "Distance to goal is " << distance_from_g << std::endl;
+    //std::cout << "meas Vec: " << std::endl << measurement <<std::endl;
     Eigen::VectorXd x_dot;
     x_dot = multiplier * measurement;
     //std::cout << "x_dot Vec: " << std::endl << x_dot <<std::endl;
@@ -292,7 +294,7 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
     accel(1) = x_dot(3);
     accel(2) = x_dot(5);
     auto speed_val = desired_vector_.norm();
-    std::cout << "Total Speed: " <<speed_val <<std::endl;
+    //std::cout << "Total Speed: " <<speed_val <<std::endl;
     //To avoid causing a NaN value to report to motorschemas, if statement checking if 0 during start and adding very small amount
     if (desired_vector_(0) == 0.0)
        desired_vector_(0) = 0.000001;
