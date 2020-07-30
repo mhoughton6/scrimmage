@@ -50,6 +50,13 @@ public:
         const ControlVector<3, SCALAR>& control,
         StateVector<6, SCALAR>& derivative) override
     {
+        // derivative(0) = state(1) + control(0) * t;
+        // derivative(1) = control(0);
+        // derivative(2) = state(3) + control(1) * t;
+        // derivative(3) = control(1);
+        // derivative(4) = state(5) + control(2) * t;
+        // derivative(5) = control(2);
+
         derivative(0) = state(1);
         derivative(1) = control(0);
         derivative(2) = state(3);

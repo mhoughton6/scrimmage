@@ -256,7 +256,7 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
     Eigen::VectorXd measurement;
     measurement = full_state - goal;
     double distance_from_g = sqrt((measurement(0) * measurement(0)) + (measurement(2) * measurement(2)));
-    //std::cout << "Distance to goal is " << distance_from_g << std::endl;
+    std::cout << "Distance to goal is " << distance_from_g << std::endl;
     //std::cout << "meas Vec: " << std::endl << measurement <<std::endl;
     Eigen::VectorXd x_dot;
     x_dot = multiplier * measurement;
@@ -287,20 +287,37 @@ bool MoveToGoalMS::step_autonomy(double t, double dt) {
 //     //       x_dot(5) = 0;
 //     }
 
-    desired_vector_(0) = x_dot(0);
-    desired_vector_(1) = x_dot(2);
+    double mult_val;
+    //Sigmoid function to help increase speed while not overshooting target
+    mult_val = 1 + (0.26/(1 + exp(-6 * (distance_from_g - 48.1))));
+
+    //Hacky way of increasing speed while staying at optimal tuning
+    
+    // if (distance_from_g >48.1)
+    // 	mult_val = 1.26;
+    // else 
+    // 	mult_val = 1;
+
+    //Use if only trying to tune controller for overshoot not speed
+
+    //double mult_val = 1;
+    
+    std::cout << "Multiplied Value: " << mult_val << std::endl;
+
+    desired_vector_(0) = x_dot(0) * mult_val;
+    desired_vector_(1) = x_dot(2) * mult_val;
     desired_vector_(2) = x_dot(4);
     accel(0) = x_dot(1);
     accel(1) = x_dot(3);
     accel(2) = x_dot(5);
     auto speed_val = desired_vector_.norm();
-    //std::cout << "Total Speed: " <<speed_val <<std::endl;
+    std::cout << "Total Speed: " <<speed_val <<std::endl;
     //To avoid causing a NaN value to report to motorschemas, if statement checking if 0 during start and adding very small amount
     if (desired_vector_(0) == 0.0)
        desired_vector_(0) = 0.000001;
     if (desired_vector_(1) == 0.0)
       desired_vector_(1) = 0.000001;
-    // std::cout << "Desired Vec: " << std::endl << desired_vector_ <<std::endl;
+    std::cout << "Desired Vec: " << std::endl << desired_vector_ <<std::endl;
 
     csv.append(scrimmage::CSV::Pairs{
         {"t", t},
